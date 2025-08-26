@@ -71,3 +71,11 @@ Maintainers: add yourself to `docs/maintainers.md` if you contribute regularly.
 - Added Frames, Source Calendars, Calendar Events, Rewards, Reward Points paths.
 - Expanded `list_item` schema; corrected color fields to accept `#RRGGBB`.
 - Ensured `chore.status` captured explicitly.
+
+
+## Authentication
+See [docs/auth.md](docs/auth.md) for guidance on capturing and using your own token.
+
+
+## Auth tokens
+See **docs/auth.md** for how to capture a token safely.
