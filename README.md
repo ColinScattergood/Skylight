@@ -79,3 +79,15 @@ See [docs/auth.md](docs/auth.md) for guidance on capturing and using your own to
 
 ## Auth tokens
 See **docs/auth.md** for how to capture a token safely.
+
+
+## Interactive Docs
+You can explore the API spec in a browser:
+
+- [Swagger UI](docs-site/swagger.html) — interactive “try it” interface
+- [Redoc](docs-site/redoc.html) — clean reference-style docs
+
+> On GitHub Pages these will be accessible at:  
+> `https://<your-username>.github.io/<repo>/docs-site/swagger.html`
+> `https://<your-username>.github.io/<repo>/docs-site/redoc.html`
+
