@@ -60,3 +60,14 @@ See the OpenAPI spec for parameters and a redacted example response.
 ---
 
 Maintainers: add yourself to `docs/maintainers.md` if you contribute regularly.
+
+
+## v0.2.0
+- Added Categories, Devices, Lists, Task Box endpoints and schemas.
+- Added Basic token auth scheme in addition to Bearer.
+
+
+## v0.3.0
+- Added Frames, Source Calendars, Calendar Events, Rewards, Reward Points paths.
+- Expanded `list_item` schema; corrected color fields to accept `#RRGGBB`.
+- Ensured `chore.status` captured explicitly.

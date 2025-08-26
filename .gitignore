@@ -1,0 +1,5 @@
+# local artifacts
+.DS_Store
+*.env
+*.local
+examples/*-raw*.json
