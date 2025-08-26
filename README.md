@@ -168,7 +168,7 @@ See **docs/auth.md** for how to capture a token safely.
 
 
 ## Interactive Docs
-You can explore the API spec in a browser:
+You can explore the API spec in your browser:
 
 - [Swagger UI](docs/swagger.html) — interactive “try it” interface
 - [Redoc](docs/redoc.html) — clean reference-style docs
