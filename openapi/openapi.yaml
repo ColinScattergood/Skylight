@@ -1,0 +1,174 @@
+openapi: 3.1.0
+info:
+  title: Unofficial Skylight API (Community Reference)
+  version: 0.1.0
+  description: |
+    Reverse‑engineered reference for Skylight endpoints based on observed traffic.
+    Not affiliated with Skylight. JSON:API style resources are common (type, id,
+    attributes, relationships). **All examples are redacted.**
+servers:
+  - url: https://app.ourskylight.com
+    description: Production host observed in mobile traffic
+tags:
+  - name: Chores
+    description: Household chores and scheduling
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    JsonApiResourceId:
+      type: object
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+      required: [type, id]
+    CategoryRelationship:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/JsonApiResourceId'
+    ChoreAttributes:
+      type: object
+      properties:
+        summary:
+          type: string
+          description: Short title of the chore (e.g., "Recycling")
+        start:
+          type: string
+          format: date
+          description: Scheduled date (YYYY-MM-DD)
+        start_time:
+          type: string
+          nullable: true
+          description: Optional start time (unknown format; often null)
+        completed_on:
+          type: string
+          nullable: true
+          description: Completion timestamp if completed
+        is_future:
+          type: boolean
+          description: Whether the chore is in the future
+        recurring:
+          type: boolean
+        recurring_until:
+          type: string
+          nullable: true
+        recurrence_set:
+          type: string
+          nullable: true
+          description: RRULE-style data (e.g., 'RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO;WKST=SU')
+        reward_points:
+          nullable: true
+        emoji_icon:
+          nullable: true
+        position:
+          nullable: true
+      additionalProperties: true
+    ChoreResource:
+      type: object
+      properties:
+        type:
+          type: string
+          const: chore
+        id:
+          type: string
+        attributes:
+          $ref: '#/components/schemas/ChoreAttributes'
+        relationships:
+          type: object
+          properties:
+            category:
+              $ref: '#/components/schemas/CategoryRelationship'
+      required: [type, id, attributes]
+paths:
+  /api/frames/{frameId}/chores:
+    get:
+      tags: [Chores]
+      summary: List chores for a frame in a date range
+      description: |
+        Returns a JSON:API document with `data` as an array of `chore` resources.
+        Observed query parameters include `after`, `before`, `include_late`, and `filter=linked_to_profile`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: frameId
+          required: true
+          schema:
+            type: string
+          description: Numeric or string Frame identifier (household/unit)
+        - in: query
+          name: after
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Lower bound (inclusive) date (YYYY-MM-DD)
+        - in: query
+          name: before
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Upper bound (inclusive) date (YYYY-MM-DD)
+        - in: query
+          name: include_late
+          required: false
+          schema:
+            type: boolean
+          description: Include late chores (observed values 'true'/'false')
+        - in: query
+          name: filter
+          required: false
+          schema:
+            type: string
+            enum: [linked_to_profile]
+          description: Filters results to chores linked to the current profile
+        - in: header
+          name: Accept
+          required: false
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChoreResource'
+                required: [data]
+              examples:
+                sample:
+                  summary: Redacted example
+                  value:
+                    data:
+                      - type: chore
+                        id: "REDACTED-2025-08-25"
+                        attributes:
+                          summary: "Recycling"
+                          start: "2025-08-25"
+                          is_future: false
+                          recurring: true
+                          recurrence_set: "RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO;WKST=SU"
+                          start_time: null
+                          completed_on: null
+                        relationships:
+                          category:
+                            data:
+                              type: category
+                              id: "REDACTED"
+        '401':
+          description: Unauthorized (invalid token)
+        '429':
+          description: Too Many Requests (rate limiting suspected, not yet confirmed)
