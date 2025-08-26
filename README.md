@@ -174,5 +174,5 @@ You can explore the API spec in your browser:
 - [Redoc](docs/redoc.html) — clean reference-style docs
 
 > On GitHub Pages these will be accessible at:  
-> https://<user>.github.io/<repo>/swagger.html  
-> https://<user>.github.io/<repo>/redoc.html
+> https://`{user}`.github.io/`{repo}`/swagger.html  
+> https://`{user}`.github.io/`{repo}`/redoc.html
