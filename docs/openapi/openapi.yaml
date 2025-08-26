@@ -1,7 +1,7 @@
-openapi: "3.0.3"
+openapi: 3.0.3
 info:
   title: Unofficial Skylight API (Community Reference)
-  version: "0.3.0"
+  version: 0.3.1
   description: |
     Reverse-engineered reference for Skylight endpoints based on observed traffic.
     JSON:API-style resources are common (type, id, attributes, relationships).
@@ -33,17 +33,16 @@ components:
   schemas:
     JsonApiResourceId:
       type: object
-      required: [type, id]
       properties:
         type:
           type: string
         id:
           type: string
+      required: [type, id]
 
     # ---- Categories ----
     CategoryAttributes:
       type: object
-      additionalProperties: true
       properties:
         color:
           type: string
@@ -62,10 +61,10 @@ components:
         profile_pic_url:
           type: string
           nullable: true
+      additionalProperties: true
 
     CategoryResource:
       type: object
-      required: [type, id]
       properties:
         type:
           type: string
@@ -74,11 +73,11 @@ components:
           type: string
         attributes:
           $ref: '#/components/schemas/CategoryAttributes'
+      required: [type, id]
 
     # ---- Chores ----
     ChoreAttributes:
       type: object
-      additionalProperties: true
       properties:
         id:
           type: integer
@@ -87,7 +86,7 @@ components:
           type: string
         status:
           type: string
-          description: Known values include 'pending'
+          description: Known values include 'pending' and 'complete'
         start:
           type: string
           format: date
@@ -111,14 +110,18 @@ components:
           nullable: true
           description: RRULE-like string
         reward_points:
+          type: integer
           nullable: true
         emoji_icon:
+          type: string
           nullable: true
         routine:
           type: boolean
           nullable: true
         position:
+          type: integer
           nullable: true
+      additionalProperties: true
 
     ChoreRelationships:
       type: object
@@ -131,7 +134,6 @@ components:
 
     ChoreResource:
       type: object
-      required: [type, id, attributes]
       properties:
         type:
           type: string
@@ -142,6 +144,7 @@ components:
           $ref: '#/components/schemas/ChoreAttributes'
         relationships:
           $ref: '#/components/schemas/ChoreRelationships'
+      required: [type, id, attributes]
 
     # ---- Devices ----
     DeviceAttributes:
@@ -151,7 +154,6 @@ components:
 
     DeviceResource:
       type: object
-      required: [type, id]
       properties:
         type:
           type: string
@@ -160,11 +162,11 @@ components:
           type: string
         attributes:
           $ref: '#/components/schemas/DeviceAttributes'
+      required: [type, id]
 
     # ---- Lists ----
     ListAttributes:
       type: object
-      additionalProperties: true
       properties:
         label:
           type: string
@@ -178,6 +180,7 @@ components:
           description: Known: 'shopping' or 'to_do'
         default_grocery_list:
           type: boolean
+      additionalProperties: true
 
     ListRelationships:
       type: object
@@ -192,7 +195,6 @@ components:
 
     ListResource:
       type: object
-      required: [type, id, attributes]
       properties:
         type:
           type: string
@@ -203,10 +205,10 @@ components:
           $ref: '#/components/schemas/ListAttributes'
         relationships:
           $ref: '#/components/schemas/ListRelationships'
+      required: [type, id, attributes]
 
     ListItemAttributes:
       type: object
-      additionalProperties: true
       properties:
         label:
           type: string
@@ -222,10 +224,10 @@ components:
           type: string
           format: date-time
           nullable: true
+      additionalProperties: true
 
     ListItemResource:
       type: object
-      required: [type, id]
       properties:
         type:
           type: string
@@ -234,11 +236,11 @@ components:
           type: string
         attributes:
           $ref: '#/components/schemas/ListItemAttributes'
+      required: [type, id]
 
     # ---- Task Box Items ----
     TaskBoxItemAttributes:
       type: object
-      additionalProperties: true
       properties:
         id:
           type: integer
@@ -246,16 +248,18 @@ components:
         summary:
           type: string
         emoji_icon:
+          type: string
           nullable: true
         routine:
           type: boolean
           nullable: true
         reward_points:
+          type: integer
           nullable: true
+      additionalProperties: true
 
     TaskBoxItemResource:
       type: object
-      required: [type, id, attributes]
       properties:
         type:
           type: string
@@ -264,6 +268,7 @@ components:
           type: string
         attributes:
           $ref: '#/components/schemas/TaskBoxItemAttributes'
+      required: [type, id, attributes]
 
     # ---- Frames (minimal) ----
     FrameAttributes:
@@ -272,7 +277,6 @@ components:
 
     FrameResource:
       type: object
-      required: [type, id]
       properties:
         type:
           type: string
@@ -281,6 +285,7 @@ components:
           type: string
         attributes:
           $ref: '#/components/schemas/FrameAttributes'
+      required: [type, id]
 
     # ---- Calendars ----
     SourceCalendarAttributes:
@@ -289,7 +294,6 @@ components:
 
     SourceCalendarResource:
       type: object
-      required: [type, id]
       properties:
         type:
           type: string
@@ -298,6 +302,7 @@ components:
           type: string
         attributes:
           $ref: '#/components/schemas/SourceCalendarAttributes'
+      required: [type, id]
 
     CalendarEventAttributes:
       type: object
@@ -306,7 +311,6 @@ components:
 
     CalendarEventResource:
       type: object
-      required: [type, id]
       properties:
         type:
           type: string
@@ -315,6 +319,7 @@ components:
           type: string
         attributes:
           $ref: '#/components/schemas/CalendarEventAttributes'
+      required: [type, id]
 
     # ---- Rewards ----
     RewardAttributes:
@@ -323,7 +328,6 @@ components:
 
     RewardResource:
       type: object
-      required: [type, id]
       properties:
         type:
           type: string
@@ -332,6 +336,7 @@ components:
           type: string
         attributes:
           $ref: '#/components/schemas/RewardAttributes'
+      required: [type, id]
 
     RewardPointAttributes:
       type: object
@@ -339,7 +344,6 @@ components:
 
     RewardPointResource:
       type: object
-      required: [type, id]
       properties:
         type:
           type: string
@@ -348,6 +352,7 @@ components:
           type: string
         attributes:
           $ref: '#/components/schemas/RewardPointAttributes'
+      required: [type, id]
 
 paths:
   # ---- Frames ----
@@ -365,7 +370,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -374,7 +379,7 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/FrameResource'
-        "304":
+        '304':
           description: Not Modified
 
   # ---- Chores ----
@@ -413,7 +418,7 @@ paths:
             type: string
             enum: ["linked_to_profile"]
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -428,7 +433,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/CategoryResource'
-        "304":
+        '304':
           description: Not Modified
     post:
       tags: [Chores]
@@ -448,7 +453,6 @@ paths:
           application/json:
             schema:
               type: object
-              required: [data]
               properties:
                 data:
                   type: object
@@ -462,7 +466,7 @@ paths:
                     relationships:
                       $ref: '#/components/schemas/ChoreRelationships'
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -491,7 +495,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -502,7 +506,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/CategoryResource'
-        "304":
+        '304':
           description: Not Modified
 
   # ---- Devices ----
@@ -520,7 +524,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -531,7 +535,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/DeviceResource'
-        "304":
+        '304':
           description: Not Modified
 
   # ---- Lists ----
@@ -549,7 +553,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -560,7 +564,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/ListResource'
-        "304":
+        '304':
           description: Not Modified
 
   /api/frames/{frameId}/lists/{listId}:
@@ -582,7 +586,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -623,7 +627,6 @@ paths:
           application/json:
             schema:
               type: object
-              required: [data]
               properties:
                 data:
                   type: object
@@ -635,7 +638,7 @@ paths:
                     attributes:
                       $ref: '#/components/schemas/TaskBoxItemAttributes'
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -660,7 +663,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -671,7 +674,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/SourceCalendarResource'
-        "304":
+        '304':
           description: Not Modified
 
   /api/frames/{frameId}/calendar_events:
@@ -711,7 +714,7 @@ paths:
             type: string
             description: "CSV: categories,calendar_account,event_notification_setting"
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -725,10 +728,10 @@ paths:
                   included:
                     type: array
                     items:
-                      oneOf:
+                      anyOf:
                         - $ref: '#/components/schemas/CategoryResource'
                         - $ref: '#/components/schemas/SourceCalendarResource'
-        "304":
+        '304':
           description: Not Modified
 
   # ---- Rewards ----
@@ -752,7 +755,7 @@ paths:
             type: string
             format: date-time
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -763,7 +766,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/RewardResource'
-        "304":
+        '304':
           description: Not Modified
 
   /api/frames/{frameId}/reward_points:
@@ -780,7 +783,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -791,5 +794,5 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/RewardPointResource'
-        "304":
+        '304':
           description: Not Modified
