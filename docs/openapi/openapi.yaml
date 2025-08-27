@@ -179,7 +179,7 @@ components:
           pattern: "^#?[0-9A-Fa-f]{6}$"
         kind:
           type: string
-          description: Known: 'shopping' or 'to_do'
+          description: "Known values: shopping or to_do"
         default_grocery_list:
           type: boolean
       additionalProperties: true
