@@ -1,0 +1,228 @@
+name: Feature / Improvement
+description: Request new functionality or an enhancement to existing behavior.
+labels: ["status:inbox"]
+body:
+  - type: dropdown
+    id: work_type
+    attributes:
+      label: Work Type
+      options:
+        - Feature (net-new functionality)
+        - Improvement (enhance existing behavior)
+        - Tech Debt (codebase health)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: project
+    attributes:
+      label: Project
+      description: Which project does this apply to?
+      options:
+        - 360Controller
+        - aiinterview.app
+        - gh_autopilot
+        - aware-health-dashboard
+        - Beam
+        - bee-ai-todo-list
+        - budgetly-minder
+        - CalendarView-Demo
+        - cardmatch
+        - civic-bill-ai
+        - classpet
+        - deal-quarry
+        - eciverse-email-craft
+        - ember-reports
+        - evernote-rule-runner
+        - fathom-flow-ai-scribe
+        - finance-ferry-fusion
+        - focusrise
+        - fyeat
+        - goalflow-focus-forge
+        - havenAI
+        - hire-right-ai-coach
+        - home-blueprint-builder
+        - home-vision
+        - home-vision-07
+        - horizon-tasks
+        - housinghub
+        - indie-ledger
+        - indieledger
+        - integration-matrix
+        - interview-clarity-coach
+        - invoicify-dashboard
+        - jira-watcher-dashboard-view
+        - kid-talk-guardian-ai
+        - kiddo-video-vault
+        - kidvid
+        - launchloop
+        - launchsync
+        - MacOS-Lighting
+        - map-whisperer-online
+        - navi-aid-compass
+        - NextStop
+        - orga-playground
+        - orgflow-app
+        - peloton-api
+        - podq
+        - podqdotapp
+        - quicklist-tasks
+        - radar-portfolio-painter
+        - rapidcal
+        - ReplayX
+        - rhc-platform-example
+        - riddler
+        - role-ready-interview-guide
+        - roulette-movie-magic
+        - rummitime
+        - rxray
+        - scatteredlabsapps
+        - screenit
+        - screenit-app
+        - screenit-original
+        - screenit_ios
+        - Screenshots
+        - screenshots-conductor
+        - shortcutsNoteForm
+        - sky-messages-ar
+        - Skylight
+        - sladc
+        - soothe-explore-connect
+        - substack-ipad-reader
+        - sunup
+        - sunupweb
+        - surprise_presenter
+        - survivor-buddy
+        - survivor-scout
+        - talk-smart-macos
+        - three-two-insight-app
+        - threetwo
+        - Ticket-Draft
+        - ticket-draft-party
+        - TicketDraft
+        - Ticket_Draft
+        - ticketdraftweb
+        - ticketmate1
+        - vcms
+        - vibetask
+        - vote-mapper
+        - votemapper
+        - watchsync
+        - wellaware
+        - wellawareapp
+        - whatisthebestcreditcardformeapp
+        - WindDown
+        - windowed
+        - zip-to-prompt-pal
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source
+      description: Where did this request originate?
+      options:
+        - Owner
+        - User report
+        - App Store review
+        - Tester
+        - Agent
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing what you want.
+      placeholder: "e.g. Add dark mode support to the settings screen."
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Opportunity
+      description: Why is this needed? What gap or opportunity does it address?
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired_outcome
+    attributes:
+      label: Desired Outcome
+      description: What should the result look like when this is done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: success_criteria
+    attributes:
+      label: Success Criteria
+      description: How will you know this was done correctly?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      options:
+        - High (act this week)
+        - Medium (important, can schedule)
+        - Low (nice to have)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user_impact
+    attributes:
+      label: User Impact
+      options:
+        - All users
+        - Many users
+        - Some users
+        - Few users
+        - Internal only
+        - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Rough Effort Guess
+      options:
+        - "XS (< 1 hour)"
+        - "S (1-4 hours)"
+        - "M (half to full day)"
+        - "L (multi-day)"
+        - "XL (week+)"
+        - "Unknown"
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting Material
+      description: Screenshots, links, mockups, or references.
+    validations:
+      required: false
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Any limitations, compatibility requirements, or scope boundaries.
+    validations:
+      required: false
+
+  - type: textarea
+    id: area
+    attributes:
+      label: Affected Area
+      description: Which part of the project is involved?
+    validations:
+      required: false
