@@ -1,0 +1,184 @@
+name: Project Sync
+
+on:
+  issues:
+    types: [opened, labeled]
+  pull_request:
+    types: [opened]
+
+permissions:
+  issues: read
+  pull-requests: read
+
+jobs:
+  add-to-project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add to portfolio project and populate fields
+        uses: actions/github-script@v7
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            const projectId = 'PVT_kwHOAA5jyc4BSd3X';
+
+            // Field IDs
+            const FIELDS = {
+              status:    'PVTSSF_lAHOAA5jyc4BSd3Xzg__egA',
+              lane:      'PVTSSF_lAHOAA5jyc4BSd3Xzg__ejo',
+              workType:  'PVTSSF_lAHOAA5jyc4BSd3Xzg__ejs',
+              priority:  'PVTSSF_lAHOAA5jyc4BSd3Xzg__ej0',
+              effort:    'PVTSSF_lAHOAA5jyc4BSd3Xzg__ej4',
+              readiness: 'PVTSSF_lAHOAA5jyc4BSd3Xzg__ekk',
+              projectName: 'PVTF_lAHOAA5jyc4BSd3Xzg__ekw',
+            };
+
+            // Option IDs for single-select fields
+            const OPTIONS = {
+              status: {
+                'inbox': 'e96a221d', 'backlog': 'aea17f2e', 'needs info': 'a7d70425',
+                'ready': '9123758e', 'in progress': 'e004bf03', 'in review': '42e0ec2b',
+                'done': '93b92a04',
+              },
+              lane: {
+                'production': 'b0a40429', 'active build': '14b9235e', 'incubator': '703b0606',
+              },
+              workType: {
+                'bug': 'a37fc2ec', 'feature': '47e79152', 'improvement': '69afd0d9',
+                'idea': 'bb38c408', 'feedback': 'f1a60112', 'tech debt': 'a39ff4d0',
+              },
+              priority: {
+                'critical': 'e718d1cf', 'high': '352d1e8d', 'medium': '9a428c57', 'low': 'cd234e98',
+              },
+              effort: {
+                'xs': '6cdd9c14', 's': '4269fb74', 'm': '847a4dee', 'l': '91bffed3', 'xl': '8f8abd25',
+              },
+              readiness: {
+                'ready': 'ca09cfd8', 'needs info': 'd71c6f6c', 'not ready': '067a7bac',
+              },
+            };
+
+            // Repo-to-lane mapping
+            const REPO_LANES = {
+              'production': [],
+              'active-build': [
+                'gh_autopilot', 'launchloop', 'launchsync', 'vibetask', 'orgflow-app', 'NextStop',
+              ],
+              'incubator': [
+                '360Controller', 'Beam', 'CalendarView-Demo', 'MacOS-Lighting', 'peloton-api',
+                'Screenshots', 'shortcutsNoteForm', 'orga-playground', 'scatteredlabsapps', 'sladc',
+              ],
+            };
+
+            function repoToLane(repoName) {
+              for (const [lane, repos] of Object.entries(REPO_LANES)) {
+                if (repos.includes(repoName)) return lane;
+              }
+              return null;
+            }
+
+            // Determine the content node ID
+            const isPR = !!context.payload.pull_request;
+            const item = isPR ? context.payload.pull_request : context.payload.issue;
+            const contentId = item.node_id;
+            const repoName = context.repo.repo;
+            const labels = (item.labels || []).map(l => l.name);
+
+            // 1. Add item to project
+            const addResult = await github.graphql(`
+              mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                  item { id }
+                }
+              }
+            `, { projectId, contentId });
+
+            const itemId = addResult.addProjectV2ItemById.item.id;
+            core.info(`Added to project: itemId=${itemId}`);
+
+            // Helper to set a single-select field
+            async function setSelect(fieldId, optionId) {
+              if (!optionId) return;
+              await github.graphql(`
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
+                    value: { singleSelectOptionId: $optionId }
+                  }) { clientMutationId }
+                }
+              `, { projectId, itemId, fieldId, optionId });
+            }
+
+            // Helper to set a text field
+            async function setText(fieldId, text) {
+              if (!text) return;
+              await github.graphql(`
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $text: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
+                    value: { text: $text }
+                  }) { clientMutationId }
+                }
+              `, { projectId, itemId, fieldId, text });
+            }
+
+            // 2. Set Project Name
+            await setText(FIELDS.projectName, repoName);
+
+            // 3. Map labels to field values
+            for (const label of labels) {
+              const lower = label.toLowerCase();
+
+              // Status
+              if (lower.startsWith('status:')) {
+                const val = lower.replace('status:', '').trim();
+                const opt = OPTIONS.status[val];
+                if (opt) await setSelect(FIELDS.status, opt);
+              }
+
+              // Work type
+              if (lower.startsWith('type:')) {
+                const val = lower.replace('type:', '').trim();
+                const mapped = val === 'tech-debt' ? 'tech debt' : val;
+                const opt = OPTIONS.workType[mapped];
+                if (opt) await setSelect(FIELDS.workType, opt);
+              }
+
+              // Priority
+              if (lower.startsWith('priority:')) {
+                const val = lower.replace('priority:', '').trim();
+                const opt = OPTIONS.priority[val];
+                if (opt) await setSelect(FIELDS.priority, opt);
+              }
+
+              // Effort
+              if (lower.startsWith('effort:')) {
+                const val = lower.replace('effort:', '').trim();
+                const opt = OPTIONS.effort[val];
+                if (opt) await setSelect(FIELDS.effort, opt);
+              }
+
+              // Readiness from status
+              if (lower === 'status:ready' || lower === 'execution-ready') {
+                await setSelect(FIELDS.readiness, OPTIONS.readiness['ready']);
+              }
+              if (lower === 'status:needs-info') {
+                await setSelect(FIELDS.readiness, OPTIONS.readiness['needs info']);
+              }
+            }
+
+            // 4. Lane from repo classification
+            const lane = repoToLane(repoName);
+            if (lane) {
+              const laneKey = lane === 'active-build' ? 'active build' : lane;
+              const opt = OPTIONS.lane[laneKey];
+              if (opt) await setSelect(FIELDS.lane, opt);
+            }
+
+            // 5. If it's a PR, set status to In Review
+            if (isPR) {
+              await setSelect(FIELDS.status, OPTIONS.status['in review']);
+            }
+
+            core.info('Project fields populated.');

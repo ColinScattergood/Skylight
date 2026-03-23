@@ -1,0 +1,97 @@
+name: Housekeeping
+
+on:
+  schedule:
+    # Run daily at 6:00 AM EDT (10:00 UTC), before the daily brief
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  close-old-briefs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close previous daily briefs and weekly metrics
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            for (const label of ['daily-brief', 'weekly-metrics']) {
+              const issues = await github.paginate(github.rest.issues.listForRepo, {
+                owner, repo,
+                state: 'open',
+                labels: label,
+                sort: 'created',
+                direction: 'desc',
+                per_page: 100,
+              });
+
+              // Keep the most recent one open, close the rest
+              const toClose = issues.slice(1);
+
+              for (const issue of toClose) {
+                await github.rest.issues.update({
+                  owner, repo,
+                  issue_number: issue.number,
+                  state: 'closed',
+                  state_reason: 'completed',
+                });
+                core.info(`Closed old ${label}: #${issue.number}`);
+              }
+
+              if (toClose.length > 0) {
+                core.info(`Closed ${toClose.length} old ${label} issue(s).`);
+              }
+            }
+
+  close-stale-needs-info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close needs-info issues with no activity for 14 days
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const now = new Date();
+            const staleDays = 14;
+            const staleMs = staleDays * 24 * 60 * 60 * 1000;
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo,
+              state: 'open',
+              labels: 'status:needs-info',
+              per_page: 100,
+            });
+
+            for (const issue of issues) {
+              const updatedAt = new Date(issue.updated_at);
+              const age = now - updatedAt;
+
+              if (age < staleMs) continue;
+
+              // Skip daily-brief and weekly-metrics issues
+              const labelNames = issue.labels.map(l => l.name);
+              if (labelNames.includes('daily-brief') || labelNames.includes('weekly-metrics')) continue;
+
+              const ageDays = Math.round(age / (1000 * 60 * 60 * 24));
+
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: issue.number,
+                body: `> **Auto-closed:** This issue has been in \`needs-info\` for ${ageDays} days with no updates. Closing as stale. Reopen if you can provide the missing information.`,
+              });
+
+              await github.rest.issues.update({
+                owner, repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'not_planned',
+              });
+
+              core.info(`Closed stale needs-info: #${issue.number} (${ageDays} days)`);
+            }
