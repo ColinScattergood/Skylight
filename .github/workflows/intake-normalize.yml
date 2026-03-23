@@ -1,0 +1,210 @@
+name: Bug Report
+description: Report something broken, confusing, or performing incorrectly.
+labels: ["type:bug", "status:inbox"]
+body:
+  - type: dropdown
+    id: project
+    attributes:
+      label: Project
+      description: Which project is affected?
+      options:
+        - 360Controller
+        - aiinterview.app
+        - gh_autopilot
+        - aware-health-dashboard
+        - Beam
+        - bee-ai-todo-list
+        - budgetly-minder
+        - CalendarView-Demo
+        - cardmatch
+        - civic-bill-ai
+        - classpet
+        - deal-quarry
+        - eciverse-email-craft
+        - ember-reports
+        - evernote-rule-runner
+        - fathom-flow-ai-scribe
+        - finance-ferry-fusion
+        - focusrise
+        - fyeat
+        - goalflow-focus-forge
+        - havenAI
+        - hire-right-ai-coach
+        - home-blueprint-builder
+        - home-vision
+        - home-vision-07
+        - horizon-tasks
+        - housinghub
+        - indie-ledger
+        - indieledger
+        - integration-matrix
+        - interview-clarity-coach
+        - invoicify-dashboard
+        - jira-watcher-dashboard-view
+        - kid-talk-guardian-ai
+        - kiddo-video-vault
+        - kidvid
+        - launchloop
+        - launchsync
+        - MacOS-Lighting
+        - map-whisperer-online
+        - navi-aid-compass
+        - NextStop
+        - orga-playground
+        - orgflow-app
+        - peloton-api
+        - podq
+        - podqdotapp
+        - quicklist-tasks
+        - radar-portfolio-painter
+        - rapidcal
+        - ReplayX
+        - rhc-platform-example
+        - riddler
+        - role-ready-interview-guide
+        - roulette-movie-magic
+        - rummitime
+        - rxray
+        - scatteredlabsapps
+        - screenit
+        - screenit-app
+        - screenit-original
+        - screenit_ios
+        - Screenshots
+        - screenshots-conductor
+        - shortcutsNoteForm
+        - sky-messages-ar
+        - Skylight
+        - sladc
+        - soothe-explore-connect
+        - substack-ipad-reader
+        - sunup
+        - sunupweb
+        - surprise_presenter
+        - survivor-buddy
+        - survivor-scout
+        - talk-smart-macos
+        - three-two-insight-app
+        - threetwo
+        - Ticket-Draft
+        - ticket-draft-party
+        - TicketDraft
+        - Ticket_Draft
+        - ticketdraftweb
+        - ticketmate1
+        - vcms
+        - vibetask
+        - vote-mapper
+        - votemapper
+        - watchsync
+        - wellaware
+        - wellawareapp
+        - whatisthebestcreditcardformeapp
+        - WindDown
+        - windowed
+        - zip-to-prompt-pal
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source
+      description: How was this discovered?
+      options:
+        - Owner
+        - User report
+        - App Store review
+        - Tester
+        - Agent
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing the bug.
+      placeholder: "e.g. App crashes when tapping the settings icon on iOS 18."
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      description: What is happening? Include reproduction steps if possible.
+      placeholder: |
+        Steps to reproduce:
+        1. Open the app
+        2. Tap Settings
+        3. App crashes
+
+        Expected: Settings screen opens.
+        Actual: Crash to home screen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired_outcome
+    attributes:
+      label: Desired Outcome
+      description: What should happen instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      options:
+        - Critical (production-down / data loss)
+        - High (significant user impact)
+        - Medium (important, can schedule)
+        - Low (nice to fix)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user_impact
+    attributes:
+      label: User Impact
+      description: How many users are affected?
+      options:
+        - All users
+        - Many users
+        - Some users
+        - Few users
+        - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Rough Effort Guess
+      options:
+        - "XS (< 1 hour)"
+        - "S (1-4 hours)"
+        - "M (half to full day)"
+        - "L (multi-day)"
+        - "XL (week+)"
+        - "Unknown"
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence / Screenshots / Logs
+      description: Attach any supporting material.
+    validations:
+      required: false
+
+  - type: textarea
+    id: area
+    attributes:
+      label: Affected Area
+      description: Which part of the project is involved? (screen, module, API, etc.)
+    validations:
+      required: false
