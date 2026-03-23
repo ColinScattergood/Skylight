@@ -1,0 +1,134 @@
+name: Weekly Metrics
+
+on:
+  schedule:
+    # Monday at 8:00 AM EDT (12:00 UTC)
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate weekly portfolio metrics
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const now = new Date();
+            const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+            const sinceISO = weekAgo.toISOString();
+            const dateStr = now.toISOString().split('T')[0];
+
+            // Issues created this week
+            const recentIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'all', since: sinceISO, per_page: 100,
+            });
+            const createdThisWeek = recentIssues.filter(i =>
+              new Date(i.created_at) > weekAgo && !i.pull_request
+            );
+            const closedThisWeek = recentIssues.filter(i =>
+              i.state === 'closed' && i.closed_at && new Date(i.closed_at) > weekAgo && !i.pull_request
+            );
+
+            // PRs merged this week
+            const closedPRs = await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'closed', per_page: 100,
+            });
+            const mergedThisWeek = closedPRs.filter(pr =>
+              pr.merged_at && new Date(pr.merged_at) > weekAgo
+            );
+
+            // Current open counts
+            async function countByLabel(label) {
+              const items = await github.paginate(github.rest.issues.listForRepo, {
+                owner, repo, state: 'open', labels: label, per_page: 100,
+              });
+              return items.length;
+            }
+
+            const [inboxCount, readyCount, inProgressCount, inReviewCount, needsInfoCount, backlogCount] =
+              await Promise.all([
+                countByLabel('status:inbox'),
+                countByLabel('status:ready'),
+                countByLabel('status:in-progress'),
+                countByLabel('status:in-review'),
+                countByLabel('status:needs-info'),
+                countByLabel('status:backlog'),
+              ]);
+
+            // Triage latency: avg hours inbox items stayed in inbox
+            let triageLatencyNote = '_Not enough data._';
+            const triagedItems = closedThisWeek.filter(i =>
+              i.labels?.some(l => l.name !== 'status:inbox')
+            );
+            if (triagedItems.length > 0) {
+              triageLatencyNote = `${triagedItems.length} items triaged this week.`;
+            }
+
+            // PR cycle time
+            let prCycleNote = '_No PRs merged._';
+            if (mergedThisWeek.length > 0) {
+              const cycleTimes = mergedThisWeek.map(pr => {
+                const created = new Date(pr.created_at);
+                const merged = new Date(pr.merged_at);
+                return (merged - created) / (1000 * 60 * 60);
+              });
+              const avg = cycleTimes.reduce((a, b) => a + b, 0) / cycleTimes.length;
+              prCycleNote = avg < 24
+                ? `${Math.round(avg)} hours avg (${mergedThisWeek.length} PRs)`
+                : `${Math.round(avg / 24)} days avg (${mergedThisWeek.length} PRs)`;
+            }
+
+            // Lane breakdown of created issues
+            const laneBreakdown = { production: 0, activeBuild: 0, incubator: 0, unlabeled: 0 };
+            for (const i of createdThisWeek) {
+              const labels = (i.labels || []).map(l => l.name);
+              if (labels.includes('lane:production'))        laneBreakdown.production++;
+              else if (labels.includes('lane:active-build')) laneBreakdown.activeBuild++;
+              else if (labels.includes('lane:incubator'))    laneBreakdown.incubator++;
+              else                                            laneBreakdown.unlabeled++;
+            }
+
+            let report = `# Weekly Metrics — ${dateStr}\n\n`;
+
+            report += `## Throughput\n`;
+            report += `| Metric | Count |\n|---|---|\n`;
+            report += `| Issues created | ${createdThisWeek.length} |\n`;
+            report += `| Issues closed | ${closedThisWeek.length} |\n`;
+            report += `| PRs merged | ${mergedThisWeek.length} |\n\n`;
+
+            report += `## Current State\n`;
+            report += `| Bucket | Open |\n|---|---|\n`;
+            report += `| Inbox | ${inboxCount} |\n`;
+            report += `| Ready | ${readyCount} |\n`;
+            report += `| In Progress | ${inProgressCount} |\n`;
+            report += `| In Review | ${inReviewCount} |\n`;
+            report += `| Needs Info | ${needsInfoCount} |\n`;
+            report += `| Backlog | ${backlogCount} |\n\n`;
+
+            report += `## Health Indicators\n`;
+            report += `- **Triage:** ${triageLatencyNote}\n`;
+            report += `- **PR cycle time:** ${prCycleNote}\n`;
+            report += `- **Inbox zero?** ${inboxCount === 0 ? 'Yes' : 'No (' + inboxCount + ' items)'}\n\n`;
+
+            report += `## Intake by Lane\n`;
+            report += `| Lane | Created |\n|---|---|\n`;
+            report += `| Production | ${laneBreakdown.production} |\n`;
+            report += `| Active Build | ${laneBreakdown.activeBuild} |\n`;
+            report += `| Incubator | ${laneBreakdown.incubator} |\n`;
+            report += `| Unlabeled | ${laneBreakdown.unlabeled} |\n\n`;
+
+            report += `---\n_Generated automatically by the weekly-metrics workflow._`;
+
+            await github.rest.issues.create({
+              owner, repo,
+              title: `Weekly Metrics — ${dateStr}`,
+              body: report,
+              labels: ['weekly-metrics'],
+            });
