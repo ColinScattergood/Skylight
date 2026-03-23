@@ -1,0 +1,151 @@
+name: Status Sync
+
+on:
+  pull_request:
+    types: [opened, closed, reopened, ready_for_review, converted_to_draft]
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  sync-pr-to-issue:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync linked issue status from PR lifecycle
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+
+            // Extract linked issue numbers from "Closes #N" or "Fixes #N"
+            const issueRefs = [...body.matchAll(/(?:closes|fixes|resolves)\s+#(\d+)/gi)];
+            if (issueRefs.length === 0) return;
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const statusLabels = [
+              'status:inbox', 'status:backlog', 'status:needs-info',
+              'status:ready', 'status:in-progress', 'status:in-review',
+            ];
+
+            async function setStatus(issueNumber, newLabel) {
+              const issue = await github.rest.issues.get({ owner, repo, issue_number: issueNumber });
+              const currentLabels = issue.data.labels.map(l => l.name);
+              const toRemove = currentLabels.filter(l => statusLabels.includes(l) && l !== newLabel);
+
+              for (const label of toRemove) {
+                try {
+                  await github.rest.issues.removeLabel({ owner, repo, issue_number: issueNumber, name: label });
+                } catch (e) { /* label may already be gone */ }
+              }
+
+              if (!currentLabels.includes(newLabel)) {
+                await github.rest.issues.addLabels({ owner, repo, issue_number: issueNumber, labels: [newLabel] });
+              }
+            }
+
+            for (const match of issueRefs) {
+              const issueNumber = parseInt(match[1], 10);
+
+              if (pr.merged) {
+                // PR merged — close the issue (GitHub auto-close handles this,
+                // but we ensure the status label is consistent)
+                await setStatus(issueNumber, 'status:in-review');
+                // GitHub will auto-close on merge if "Closes" keyword is used
+              } else if (pr.state === 'closed' && !pr.merged) {
+                // PR closed without merge — revert to ready
+                await setStatus(issueNumber, 'status:ready');
+              } else if (pr.draft) {
+                await setStatus(issueNumber, 'status:in-progress');
+              } else {
+                // PR opened / ready for review
+                await setStatus(issueNumber, 'status:in-review');
+              }
+            }
+
+  execution-handoff:
+    if: >-
+      github.event_name == 'issues' &&
+      contains(github.event.label.name, 'execution-ready')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate readiness and post execution prompt
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const checks = [
+              { field: 'Problem', patterns: [/### Problem Description/i, /### Problem or Opportunity/i, /### Summary/i] },
+              { field: 'Desired Outcome', patterns: [/### Desired Outcome/i] },
+              { field: 'Success Criteria', patterns: [/### Success Criteria/i, /### How.*tested/i] },
+            ];
+
+            const missing = [];
+            for (const check of checks) {
+              const found = check.patterns.some(p => p.test(body));
+              if (!found) missing.push(check.field);
+            }
+
+            if (missing.length > 0) {
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: issue.number,
+                body: `> **Execution gate:** This issue is labeled \`execution-ready\` but is missing context:\n> ${missing.map(m => `- ${m}`).join('\n> ')}\n>\n> Please add the missing sections before handing off to an agent.`,
+              });
+
+              await github.rest.issues.addLabels({
+                owner, repo,
+                issue_number: issue.number,
+                labels: ['status:needs-info'],
+              });
+
+              try {
+                await github.rest.issues.removeLabel({
+                  owner, repo,
+                  issue_number: issue.number,
+                  name: 'execution-ready',
+                });
+              } catch (e) { /* already removed */ }
+
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner, repo,
+              issue_number: issue.number,
+              body: [
+                '> **Execution handoff:** This issue passes the readiness check.',
+                '>',
+                '> **Next steps:**',
+                '> 1. Create a branch: `git checkout -b issue-' + issue.number + '`',
+                '> 2. Implement the change per the spec above',
+                '> 3. Open a PR referencing `Closes #' + issue.number + '`',
+                '>',
+                '> The status-sync workflow will automatically track PR state.',
+              ].join('\n'),
+            });
+
+            // Move to in-progress
+            const statusLabels = [
+              'status:inbox', 'status:backlog', 'status:needs-info', 'status:ready',
+            ];
+            for (const label of statusLabels) {
+              try {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: label });
+              } catch (e) { /* ok */ }
+            }
+            await github.rest.issues.addLabels({
+              owner, repo,
+              issue_number: issue.number,
+              labels: ['status:in-progress'],
+            });
