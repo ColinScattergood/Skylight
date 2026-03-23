@@ -1,0 +1,169 @@
+name: Daily Brief
+
+on:
+  schedule:
+    # 7:00 AM EDT (11:00 UTC)
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  daily-brief:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate daily portfolio brief
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const now = new Date();
+            const yesterday = new Date(now - 24 * 60 * 60 * 1000);
+            const sinceISO = yesterday.toISOString();
+
+            // Fetch open issues in relevant buckets
+            async function getIssuesByLabel(label) {
+              return github.paginate(github.rest.issues.listForRepo, {
+                owner, repo,
+                state: 'open',
+                labels: label,
+                per_page: 100,
+              });
+            }
+
+            const [inbox, ready, inProgress, inReview, needsInfo, today] = await Promise.all([
+              getIssuesByLabel('status:inbox'),
+              getIssuesByLabel('status:ready'),
+              getIssuesByLabel('status:in-progress'),
+              getIssuesByLabel('status:in-review'),
+              getIssuesByLabel('status:needs-info'),
+              getIssuesByLabel('today'),
+            ]);
+
+            // Recently opened (last 24h)
+            const recentIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo,
+              state: 'open',
+              since: sinceISO,
+              per_page: 100,
+            });
+            const newItems = recentIssues.filter(i =>
+              new Date(i.created_at) > yesterday && !i.pull_request
+            );
+
+            // Open PRs
+            const prs = await github.paginate(github.rest.pulls.list, {
+              owner, repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            // --- Build shortlist candidates ---
+            // Production + high-priority items that are Ready
+            const productionReady = ready.filter(i =>
+              i.labels.some(l => l.name === 'lane:production') &&
+              i.labels.some(l => ['priority:critical', 'priority:high'].includes(l.name))
+            );
+
+            const strategicReady = ready.filter(i =>
+              !i.labels.some(l => l.name === 'lane:production') &&
+              i.labels.some(l => ['priority:high', 'priority:medium'].includes(l.name))
+            );
+
+            const quickWins = ready.filter(i =>
+              i.labels.some(l => ['effort:xs', 'effort:s'].includes(l.name))
+            );
+
+            // --- Compose the brief ---
+            const dateStr = now.toISOString().split('T')[0];
+            let brief = `# Daily Brief — ${dateStr}\n\n`;
+
+            // New items
+            brief += `## New Items (last 24h)\n`;
+            if (newItems.length === 0) {
+              brief += `_None._\n\n`;
+            } else {
+              for (const i of newItems.slice(0, 15)) {
+                brief += `- #${i.number} ${i.title}\n`;
+              }
+              if (newItems.length > 15) brief += `- _...and ${newItems.length - 15} more_\n`;
+              brief += `\n`;
+            }
+
+            // Status counts
+            brief += `## Portfolio Status\n`;
+            brief += `| Bucket | Count |\n|---|---|\n`;
+            brief += `| Inbox | ${inbox.length} |\n`;
+            brief += `| Ready | ${ready.length} |\n`;
+            brief += `| In Progress | ${inProgress.length} |\n`;
+            brief += `| In Review | ${inReview.length} |\n`;
+            brief += `| Needs Info | ${needsInfo.length} |\n`;
+            brief += `| Open PRs | ${prs.length} |\n\n`;
+
+            // Recommended shortlist
+            brief += `## Recommended for Today\n`;
+            brief += `### Production / High-Impact\n`;
+            if (productionReady.length === 0) {
+              brief += `_None ready._\n`;
+            } else {
+              for (const i of productionReady.slice(0, 3)) {
+                brief += `- #${i.number} ${i.title}\n`;
+              }
+            }
+            brief += `\n### Strategic / Momentum\n`;
+            if (strategicReady.length === 0) {
+              brief += `_None ready._\n`;
+            } else {
+              for (const i of strategicReady.slice(0, 2)) {
+                brief += `- #${i.number} ${i.title}\n`;
+              }
+            }
+            brief += `\n### Quick Wins\n`;
+            if (quickWins.length === 0) {
+              brief += `_None ready._\n`;
+            } else {
+              for (const i of quickWins.slice(0, 3)) {
+                brief += `- #${i.number} ${i.title}\n`;
+              }
+            }
+            brief += `\n`;
+
+            // In progress
+            if (inProgress.length > 0) {
+              brief += `## Currently In Progress\n`;
+              for (const i of inProgress) {
+                brief += `- #${i.number} ${i.title}\n`;
+              }
+              brief += `\n`;
+            }
+
+            // PRs waiting for review
+            if (prs.length > 0) {
+              brief += `## PRs Awaiting Review\n`;
+              for (const pr of prs) {
+                brief += `- #${pr.number} ${pr.title}\n`;
+              }
+              brief += `\n`;
+            }
+
+            // Needs info
+            if (needsInfo.length > 0) {
+              brief += `## Needs Clarification\n`;
+              for (const i of needsInfo.slice(0, 10)) {
+                brief += `- #${i.number} ${i.title}\n`;
+              }
+              brief += `\n`;
+            }
+
+            brief += `---\n_Review the shortlist, approve or adjust, then label selected items \`today\`._`;
+
+            // Post as a new issue with a "daily-brief" label
+            await github.rest.issues.create({
+              owner, repo,
+              title: `Daily Brief — ${dateStr}`,
+              body: brief,
+              labels: ['daily-brief'],
+            });
